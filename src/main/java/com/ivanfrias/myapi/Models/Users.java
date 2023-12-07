@@ -6,13 +6,12 @@ import javax.persistence.*;
 @Entity
 public class Users {
 
-    public Users(Long id, String password, String email, String name, String lastname, String teamName) {
+    public Users(Long id, String password, String email, String name, String lastname) {
         this.id = id;
         this.password = password;
         this.email = email;
         this.name = name;
         this.lastname = lastname;
-        this.teamName=teamName;
     }
 
     public Users() {
@@ -34,14 +33,8 @@ public class Users {
     @Column(name = "lastname")
     private String lastname;
 
-    @Column(name = "budget")
-    private double budget;
-
     @Column(name = "is_email_verified")
     private boolean isEmailVerified = false;
-
-    @Column(name = "team_name", unique = true)
-    private String teamName;
 
     @Column(name = "email_verification_code")
     private String emailVerificationCode;
@@ -84,22 +77,6 @@ public class Users {
 
     public void setLastname(String lastname) {
         this.lastname = lastname;
-    }
-
-    public double getBudget() {
-        return budget;
-    }
-
-    public void setBudget(double budget) {
-        this.budget = budget;
-    }
-
-    public String getTeamName() {
-        return teamName;
-    }
-
-    public void setTeamName(String teamName) {
-        this.teamName = teamName;
     }
 
     public boolean isEmailVerified() {

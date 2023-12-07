@@ -7,11 +7,15 @@ import com.ivanfrias.myapi.Interfaces.UsersService;
 import com.ivanfrias.myapi.Models.Users;
 import com.ivanfrias.myapi.Repositories.UsersRepository;
 import com.ivanfrias.myapi.Validations.Validations;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 @Service
@@ -19,8 +23,7 @@ public class UsersServiceImpl implements UsersService {
     @Autowired
     private UsersRepository usersRepository;
 
-    @Autowired
-    private PlayerRepository playerRepository;
+
 
     @Autowired
     EmailServiceImpl emailService;
@@ -33,7 +36,6 @@ public class UsersServiceImpl implements UsersService {
 
         if(emailValidation==0){
             user.setEmail(userDTO.getEmail());
-            user.setBudget(11_000_000);
             try{
                 // Generamos codigo correo
                 int emailCode = Validations.generarCodigo();
@@ -42,7 +44,7 @@ public class UsersServiceImpl implements UsersService {
                 user.setEmailVerificationCode(encryptedCode); // Casteamos a String para evitar complicaciones
                 // Creamos el user
                 Users createdUser = usersRepository.save(user);
-                UsersDTONoPass usersDTONoPass = new UsersDTONoPass(createdUser.getId(), createdUser.getEmail(), createdUser.getName(), createdUser.getLastname(), user.getBudget(), user.getTeamName());
+                UsersDTONoPass usersDTONoPass = new UsersDTONoPass(createdUser.getId(), createdUser.getEmail(), createdUser.getName(), createdUser.getLastname());
                 // Le pasamos el id para que salga en pantalla
                 usersDTONoPass.setId(createdUser.getId());
 
@@ -68,7 +70,7 @@ public class UsersServiceImpl implements UsersService {
 
         if (user.isPresent()) {
             // Debemos devolver un userDTONoPass para no incurrir en un problema de seguridad al devolverle la password.
-            UsersDTONoPass usersDTONoPass = new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname(), user.get().getBudget(), user.get().getTeamName());
+            UsersDTONoPass usersDTONoPass = new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname());
             // Le pasamos el id para que salga en pantalla
             usersDTONoPass.setId(id);
             return usersDTONoPass;
@@ -79,12 +81,9 @@ public class UsersServiceImpl implements UsersService {
     public UsersDTONoPass deleteUserById(Long id) {
         Optional<Users> user = usersRepository.findById(id);
 
-        // Desvinculamos los jugadores de ese player.
-        playerRepository.resetTeam(id);
-
         if (user.isPresent()) {
             // Debemos devolver un userDTONoPass para no incurrir en un problema de seguridad al devolverle la password.
-            UsersDTONoPass usersDTONoPass = new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname(), user.get().getBudget(), user.get().getTeamName());
+            UsersDTONoPass usersDTONoPass = new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname());
             // Le pasamos el id para que salga en pantalla
             usersDTONoPass.setId(id);
             usersRepository.deleteById(id);
@@ -98,52 +97,9 @@ public class UsersServiceImpl implements UsersService {
         List<UsersDTONoPass> usersDTONoPasses = new ArrayList<UsersDTONoPass>();
 
         for(Users a : users ){
-            usersDTONoPasses.add(new UsersDTONoPass(a.getId(), a.getEmail(), a.getName(), a.getLastname(), a.getBudget(), a.getTeamName()));
+            usersDTONoPasses.add(new UsersDTONoPass(a.getId(), a.getEmail(), a.getName(), a.getLastname()));
         }
         return usersDTONoPasses;
-    }
-
-
-    public ArrayList<Object> setTeamName(Long id, TeamNameDTO teamNameDTO) throws Exception {
-        Optional<Users> user = usersRepository.findById(id);
-        int verifyTeamName = Validations.verifyName(teamNameDTO.getTeamName());
-
-        if (user.isPresent()) {
-            if (verifyTeamName==0){
-                // Seteamos el Nombre del equipo y lo guardamos
-                String teamName = teamNameDTO.getTeamName().toLowerCase();
-                user.get().setTeamName(teamName);
-
-                usersRepository.save(user.get());
-
-                // Debemos devolver un userDTONoPass para no incurrir en un problema de seguridad al devolverle la password.
-                UsersDTONoPass usersDTONoPass = new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname(), user.get().getBudget(), teamName);
-                // Le pasamos el id para que salga en pantalla
-                usersDTONoPass.setId(id);
-                return new ArrayList<>(Arrays.asList(usersDTONoPass, verifyTeamName));
-            }
-        }
-        return new ArrayList<>(Arrays.asList(new UsersDTONoPass(), verifyTeamName));
-    }
-
-    public ArrayList<Object> setNameLastname(Long id, NameLastnameDTO nameLastnameDTO) {
-        Optional<Users> user = usersRepository.findById(id);
-        int verifyName = Validations.verifyName(nameLastnameDTO.getName());
-        int verifySurname = Validations.verifyName(nameLastnameDTO.getLastname());
-        if (user.isPresent()) {
-            if (verifyName==0 && verifySurname==0){
-                // Seteamos el Nombre del name y lastname
-                user.get().setName(nameLastnameDTO.getName());
-                user.get().setLastname(nameLastnameDTO.getLastname());
-                usersRepository.save(user.get());
-                // Debemos devolver un userDTONoPass para no incurrir en un problema de seguridad al devolverle la password.
-                UsersDTONoPass usersDTONoPass = new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname(), user.get().getBudget(), user.get().getTeamName());
-                // Le pasamos el id para que salga en pantalla
-                usersDTONoPass.setId(id);
-                return new ArrayList<>(Arrays.asList(usersDTONoPass, verifyName, verifySurname));
-            }
-        }
-        return new ArrayList<>(Arrays.asList(new UsersDTONoPass(), verifyName, verifySurname));
     }
 
     public UsersDTONoPass validateEmailCode(long id, int code) {
@@ -156,9 +112,37 @@ public class UsersServiceImpl implements UsersService {
             usersRepository.save(user.get());
 
             // Creamos el DTO
-            return new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname(), user.get().getBudget(), user.get().getTeamName());
+            return new UsersDTONoPass(user.get().getId(), user.get().getEmail(), user.get().getName(), user.get().getLastname());
         }
 
         return new UsersDTONoPass();
+    }
+
+    public Long verifyToken(HttpServletRequest request){
+        String secretKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+        // Obtener el token del encabezado "Authorization"
+        String token = request.getHeader("Authorization");
+
+        // Verificar si el token comienza con "Bearer "
+        if (token != null && token.startsWith("Bearer ")) {
+            try {
+                // Eliminar la parte "Bearer " del token para obtener solo el token JWT
+                String jwtToken = token.substring(7); // 7 es la longitud de "Bearer "
+
+                // Decodificar el token JWT y obtener los claims (información del usuario)
+                Claims claims = Jwts.parserBuilder()
+                        .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                        .build()
+                        .parseClaimsJws(jwtToken)
+                        .getBody();
+
+                // Acceder a los claims específicos del token JWT
+                int id_ = (int) claims.get("id");
+                return (long) id_;
+            } catch (Exception e) {
+                return -1L;
+            }
+        }
+        return -1L;
     }
 }

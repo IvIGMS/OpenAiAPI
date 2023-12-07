@@ -22,7 +22,7 @@ public class TokenUtils {
     private final Long ACCESS_TOKEN_VALIDITY_SECONDS = constants.ACCESS_TOKEN_VALIDITY_SECONDS;
 
     // Enviar data adicional
-    public String createToken(long id, String email, String name, String lastname, String teamName, Double budget, boolean isEmailVerified){
+    public String createToken(long id, String email, String name, String lastname, boolean isEmailVerified){
         long expirationTime = ACCESS_TOKEN_VALIDITY_SECONDS * 1000;
         Date expirationDate = new Date(System.currentTimeMillis() + expirationTime);
 
@@ -31,8 +31,6 @@ public class TokenUtils {
         extra.put("id", id);
         extra.put("name", name);
         extra.put("lastname", lastname);
-        extra.put("teamName", teamName);
-        extra.put("budget", budget);
         extra.put("isEmailVerified", isEmailVerified);
 
         return Jwts.builder()

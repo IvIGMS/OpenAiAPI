@@ -63,16 +63,9 @@ public class UserDetailsImpl implements UserDetails {
         return usuario.getEmail();
     }
 
-    public Double getBudget() {
-        return usuario.getBudget();
-    }
 
     public String getLastname() {
         return usuario.getLastname();
-    }
-
-    public String getTeamName() {
-        return usuario.getTeamName();
     }
 
     public boolean getIsEmailVerified() {
