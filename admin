@@ -1,0 +1,3 @@
+
+
+insert into users values (0, 'admin@admin', 'admin', 'admin','$2a$10$HFy2z9axsU/Wqqo0MiMHNuh2ei7ks7ZljbD1u5VPDjObu9dMdvdBe', 'admin')
